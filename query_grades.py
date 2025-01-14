@@ -2,9 +2,11 @@ import logging
 
 from tabulate import tabulate
 
-from grade_fetcher import GradeFetcher
+from jw_system import GradeFetcher
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -14,20 +16,55 @@ def format_grades(grades):
         return "暂无成绩数据"
 
     # 准备表格数据
-    headers = ["学期", "课程名称", "学分", "课程类型", "成绩"]
+    headers = [
+        "教师",
+        "课程名称",
+        "课程编号",
+        "学分",
+        "平时成绩",
+        "期中成绩",
+        "期末成绩",
+        "最终成绩",
+        "学分绩点",
+        "备注",
+    ]
+
     rows = [
         [
-            grade["semester"],
+            grade["teacher"],
             grade["course_name"],
+            grade["course_code"],
             grade["credit"],
-            grade["course_type"],
-            grade["grade"],
+            grade["usual_grade"],
+            grade["midterm_grade"],
+            grade["final_grade"],
+            grade["total_grade"],
+            grade["gpa"],
+            grade["note"],
         ]
         for grade in grades
     ]
 
+    # 计算总学分和平均绩点
+    total_credits = sum(
+        float(grade["credit"])
+        for grade in grades
+        if grade["credit"].replace(".", "").isdigit()
+    )
+    valid_grades = [
+        grade for grade in grades if grade["gpa"].replace(".", "").isdigit()
+    ]
+    avg_gpa = (
+        sum(float(grade["gpa"]) for grade in valid_grades) / len(valid_grades)
+        if valid_grades
+        else 0
+    )
+
     # 使用 tabulate 生成美观的表格
-    return tabulate(rows, headers=headers, tablefmt="grid")
+    table = tabulate(rows, headers=headers, tablefmt="grid")
+    summary = f"\n总学分: {total_credits:.1f}\n平均绩点: {avg_gpa:.2f}"
+
+    return table + summary
 
 
 def main():
@@ -40,13 +77,15 @@ def main():
         grades = fetcher.fetch_grades()
 
         if grades:
-            print("\n当前成绩：")
+            print("\n成绩查询结果：")
             print(format_grades(grades))
         else:
             print("获取成绩失败或暂无成绩")
 
     except Exception as e:
         logger.error(f"查询成绩时出错: {str(e)}")
+    finally:
+        input("\n按回车键退出...")
 
 
 if __name__ == "__main__":

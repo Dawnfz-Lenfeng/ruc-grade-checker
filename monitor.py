@@ -4,7 +4,7 @@ from datetime import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from db import GradeDatabase
-from grade_fetcher import GradeFetcher
+from jw_system import GradeFetcher
 from notification import NotificationService
 
 logging.basicConfig(level=logging.INFO)
