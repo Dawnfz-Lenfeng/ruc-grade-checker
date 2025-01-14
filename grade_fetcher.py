@@ -18,10 +18,14 @@ class GradeFetcher:
         self.driver = None
         self.cookies_file = "cookies.json"
 
-    def init_driver(self):
+    def init_driver(self, headless=True):
         """初始化浏览器驱动"""
+        if self.driver:
+            self.driver.quit()
+
         options = webdriver.EdgeOptions()
-        # options.add_argument("--headless")  # 注释掉无界面模式
+        if headless:
+            options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
 
@@ -29,96 +33,59 @@ class GradeFetcher:
         self.driver = webdriver.Edge(options=options, service=service)
         self.driver.implicitly_wait(10)
 
-    def login(self):
+    def login(self) -> bool:
         """登录教务系统"""
-        try:
-            logger.info("尝试使用Cookies登录...")
-            if self.load_cookies():
-                return True
 
-            logger.info("Cookies无效，需要手动登录...")
-            self.driver.get(self.base_url)
+        logger.info("尝试使用Cookies登录...")
+        if self.load_cookies():
+            return True
 
-            # 等待用户手动登录
-            logger.info("请在浏览器窗口中手动完成登录...")
-            logger.info("1. 输入用户名")
-            logger.info("2. 输入密码")
-            logger.info("3. 输入验证码")
-            logger.info("4. 点击登录按钮")
-            input("完成登录后按回车继续...")
+        logger.info("Cookies无效，需要手动登录...")
+        self.init_driver(headless=False)  # 手动登录时需要显示浏览器
+        self.driver.get(self.base_url)
 
-            # 验证是否登录成功
-            try:
-                self._check_login_success()
+        logger.info("请在浏览器窗口中手动完成登录，并点击【记住登录状态】...")
+        input("完成登录后按回车继续...")
 
-                # 保存新的cookies
-                self.save_cookies()
-                return True
-            except:
-                logger.error("登录失败，请确认是否正确登录")
-                return False
+        # 验证是否登录成功
+        if self._check_login_success():
+            return self.save_cookies()
 
-        except Exception as e:
-            logger.error(f"登录过程出错: {str(e)}")
-            return False
-
-    def save_cookies(self):
-        """保存cookies到文件"""
-        try:
-            self.driver.refresh()
-            time.sleep(2)
-            cookies = self.driver.get_cookies()
-
-            for cookie in cookies:
-                # 移除不需要的字段
-                if "expiry" in cookie:
-                    del cookie["expiry"]
-                if "sameSite" in cookie:
-                    del cookie["sameSite"]
-                logger.debug(
-                    f"Cookie: {cookie.get('name')} = {cookie.get('value')[:10]}..."
-                )
-
-            with open(self.cookies_file, "w") as f:
-                json.dump(cookies, f)
-            logger.info("Cookies已保存")
-        except Exception as e:
-            logger.error(f"保存Cookies失败: {str(e)}")
+        return False
 
     def load_cookies(self):
         """从文件加载cookies"""
-        try:
-            if not os.path.exists(self.cookies_file):
-                return False
 
-            with open(self.cookies_file, "r") as f:
-                cookies = json.load(f)
-
-            # 先删除所有现有的cookies
-            self.driver.get(self.base_url)
-            self.driver.delete_all_cookies()
-
-            for cookie in cookies:
-                try:
-                    self.driver.add_cookie(cookie)
-                except Exception as e:
-                    logger.debug(f"添加cookie失败: {cookie.get('name')} - {str(e)}")
-
-            # 刷新页面使cookies生效
-            self.driver.get(self.base_url)
-            time.sleep(2)
-
-            try:
-                self._check_login_success()
-                return True
-
-            except Exception as e:
-                logger.debug(f"验证登录状态失败: {str(e)}")
-                return False
-
-        except Exception as e:
-            logger.error(f"加载Cookies失败: {str(e)}")
+        if not os.path.exists(self.cookies_file):
             return False
+
+        with open(self.cookies_file, "r") as f:
+            cookies = json.load(f)
+
+        # 先删除所有现有的cookies
+        self.driver.get(self.base_url)
+        self.driver.delete_all_cookies()
+
+        for cookie in cookies:
+            self.driver.add_cookie(cookie)
+
+        # 刷新页面使cookies生效
+        self.driver.get(self.base_url)
+        time.sleep(1)
+
+        return self._check_login_success()
+
+    def save_cookies(self):
+        """保存cookies到文件"""
+
+        cookies = self.driver.get_cookies()
+        with open(self.cookies_file, "w") as f:
+            json.dump(cookies, f)
+        logger.info("Cookies已保存")
+
+        # 恢复为无界面模式
+        self.init_driver(headless=True)
+        return self.login()
 
     def navigate_to_grades(self):
         """导航到成绩查询页面"""
@@ -194,7 +161,12 @@ class GradeFetcher:
                 self.driver = None
 
     def _check_login_success(self):
-        WebDriverWait(self.driver, 5).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "user-logo"))
-        )
-        logger.info("登录成功")
+        try:
+            WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "user-logo"))
+            )
+            logger.info("登录成功")
+            return True
+        except Exception:
+            logger.error("登录失败，请确认是否正确登录")
+            return False
