@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import time
-from typing import Optional, List, Dict
+from typing import Optional
 
 import pandas as pd
 from selenium import webdriver
@@ -11,6 +11,8 @@ from selenium.webdriver.edge.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
+
+from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,7 @@ class JWSystem:
     def __init__(self):
         self.urls = JWUrls()
         self.driver: Optional[WebDriver] = None
-        self.cookies_file = "cookies.json"
+        self.cookies_file = Config.COOKIES_FILE
 
     def init_driver(self, headless=True):
         """初始化浏览器驱动"""
@@ -157,7 +159,7 @@ class JWSystem:
 class GradeFetcher(JWSystem):
     """成绩查询类"""
 
-    def fetch_grades(self, output_file: str = "grades.json") -> pd.DataFrame:
+    def fetch_grades(self, output_file: str = Config.GRADES_FILE) -> pd.DataFrame:
         """获取成绩信息"""
         try:
             if not self.driver:
@@ -186,7 +188,7 @@ class GradeFetcher(JWSystem):
                 self.driver.quit()
                 self.driver = None
 
-    def parse_grades(self) -> List[Dict[str, str]]:
+    def parse_grades(self):
         """解析成绩数据"""
         time.sleep(1)
         table = self.driver.find_element(By.CLASS_NAME, "table-border")
