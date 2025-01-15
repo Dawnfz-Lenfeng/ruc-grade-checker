@@ -58,6 +58,17 @@ python debug.py
 4. 程序会自动保存登录状态（cookies），后续使用无需重复登录
 
 ### 查询当前成绩
+```
+usage: query_grades.py [-h] [-o OUTPUT] [--no-display]
+
+中国人民大学教务系统成绩查询工具
+
+options:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        输出文件路径 (支持 .xlsx 和 .csv 格式)
+  --no-display          不显示成绩表格
+```
 
 ```bash
 python query_grades.py

@@ -2,9 +2,9 @@ import json
 import logging
 import os
 import time
-from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List, Dict
 
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.webdriver import WebDriver
@@ -154,27 +154,10 @@ class JWSystem:
             self.driver.quit()
 
 
-@dataclass
-class Grade:
-    """成绩数据类"""
-
-    course_name: str
-    teacher: str
-    course_type: str
-    course_module: str
-    credit: str
-    usual_grade: str
-    midterm_grade: str
-    final_grade: str
-    total_grade: str
-    gpa: str
-    note: str
-
-
 class GradeFetcher(JWSystem):
     """成绩查询类"""
 
-    def fetch_grades(self):
+    def fetch_grades(self, output_file: str = "grades.json") -> pd.DataFrame:
         """获取成绩信息"""
         try:
             if not self.driver:
@@ -186,29 +169,41 @@ class GradeFetcher(JWSystem):
             if not self.navigate("grades"):
                 raise Exception("无法访问成绩页面")
 
-            return self.parse_grades()
+            grades = self.parse_grades()
+
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(grades, f, ensure_ascii=False, indent=2)
+            logger.info(f"成绩数据已保存到 {output_file}")
+
+            return pd.DataFrame(grades)
 
         except Exception as e:
             logger.error(f"获取成绩失败: {str(e)}")
-            return []
+            return pd.DataFrame()
 
         finally:
             if self.driver:
                 self.driver.quit()
                 self.driver = None
 
-    def parse_grades(self):
+    def parse_grades(self) -> List[Dict[str, str]]:
         """解析成绩数据"""
         time.sleep(1)
         table = self.driver.find_element(By.CLASS_NAME, "table-border")
         rows = table.find_elements(By.TAG_NAME, "tr")
 
+        headers = [
+            header.text.strip() for header in rows[0].find_elements(By.TAG_NAME, "th")
+        ]
+
         grades = []
-        for row in rows[1:]:  # 跳过表头
+        for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
-            if len(cells) >= 11:
-                grade = Grade(*map(lambda x: x.text.strip(), cells))
-                grades.append(grade)
+            if len(cells) == len(headers):
+                grade_dict = {
+                    header: cell.text.strip() for header, cell in zip(headers, cells)
+                }
+                grades.append(grade_dict)
 
         logger.info(f"成功解析 {len(grades)} 条成绩记录")
         return grades
