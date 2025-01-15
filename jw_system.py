@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import time
+from dataclasses import dataclass
 from typing import Optional
 
 from selenium import webdriver
@@ -153,6 +154,23 @@ class JWSystem:
             self.driver.quit()
 
 
+@dataclass
+class Grade:
+    """成绩数据类"""
+
+    course_name: str
+    teacher: str
+    course_type: str
+    course_module: str
+    credit: str
+    usual_grade: str
+    midterm_grade: str
+    final_grade: str
+    total_grade: str
+    gpa: str
+    note: str
+
+
 class GradeFetcher(JWSystem):
     """成绩查询类"""
 
@@ -181,36 +199,16 @@ class GradeFetcher(JWSystem):
 
     def parse_grades(self):
         """解析成绩数据"""
-        try:
-            time.sleep(1)
-            table = self.driver.find_element(By.CLASS_NAME, "table-border")
-            rows = table.find_elements(By.TAG_NAME, "tr")
+        time.sleep(1)
+        table = self.driver.find_element(By.CLASS_NAME, "table-border")
+        rows = table.find_elements(By.TAG_NAME, "tr")
 
-            grades = []
-            for row in rows[1:]:
-                try:
-                    cells = row.find_elements(By.TAG_NAME, "td")
-                    if len(cells) >= 10:
-                        grade_data = {
-                            "teacher": cells[0].text.strip(),
-                            "course_name": cells[1].text.strip(),
-                            "course_code": cells[2].text.strip(),
-                            "credit": cells[3].text.strip(),
-                            "usual_grade": cells[4].text.strip(),
-                            "midterm_grade": cells[5].text.strip(),
-                            "final_grade": cells[6].text.strip(),
-                            "total_grade": cells[7].text.strip(),
-                            "gpa": cells[8].text.strip(),
-                            "note": cells[9].text.strip(),
-                        }
-                        grades.append(grade_data)
-                except Exception as e:
-                    logger.debug(f"解析行数据失败: {str(e)}")
-                    continue
+        grades = []
+        for row in rows[1:]:  # 跳过表头
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) >= 11:
+                grade = Grade(*map(lambda x: x.text.strip(), cells))
+                grades.append(grade)
 
-            logger.info(f"成功解析 {len(grades)} 条成绩记录")
-            return grades
-
-        except Exception as e:
-            logger.error(f"解析成绩数据失败: {str(e)}")
-            return []
+        logger.info(f"成功解析 {len(grades)} 条成绩记录")
+        return grades
