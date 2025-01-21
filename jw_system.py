@@ -43,11 +43,12 @@ class JWUrls:
 class JWSystem:
     """教务系统基础类"""
 
-    def __init__(self, browser_type="edge"):
+    def __init__(self, browser_type="edge", wait_time=2):
         self.urls = JWUrls()
         self.driver: WebDriver = None
         self.cookies_file = Config.COOKIES_FILE
         self.browser_type = browser_type.lower()
+        self.wait_time = wait_time
 
         if self.browser_type not in ["edge", "chrome"]:
             logger.warning(f"不支持的浏览器类型: {browser_type}，将使用 edge")
@@ -125,7 +126,7 @@ class JWSystem:
             self.driver.add_cookie(cookie)
 
         self.driver.get(self.urls.base)
-        time.sleep(1)
+        time.sleep(self.wait_time)
 
         return self._check_login_success()
 
@@ -145,7 +146,7 @@ class JWSystem:
         target_url = self.urls.get_url(route)
         self.driver.get(target_url)
 
-        time.sleep(1)
+        time.sleep(self.wait_time)
         current_url = self.driver.current_url
 
         if self.urls.routes[route] not in current_url:
@@ -190,27 +191,6 @@ class JWSystem:
 class GradeFetcher(JWSystem):
     """成绩查询类"""
 
-    def print_grades_pdf(self):
-        """点击打印按钮下载成绩单PDF"""
-        try:
-            # 等待打印按钮加载
-            print_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable(
-                    (
-                        By.XPATH,
-                        "//button[contains(@class, 'el-button--primary')]//span[text()='打印']",
-                    )
-                )
-            )
-            print_button.click()
-
-            logger.info(f"成绩单PDF将下载到: {self.download_dir}")
-            time.sleep(2)  # 等待下载开始
-            return True
-        except Exception as e:
-            logger.error(f"打印成绩单失败: {str(e)}")
-            return False
-
     def fetch_grades(
         self, output_file: str = Config.GRADES_FILE, print_pdf: bool = False
     ) -> pd.DataFrame:
@@ -225,10 +205,10 @@ class GradeFetcher(JWSystem):
             if not self.navigate("grades"):
                 raise Exception("无法访问成绩页面")
 
-            grades = self.parse_grades()
+            grades = self._parse_grades()
 
             if print_pdf:
-                self.print_grades_pdf()
+                self._print_grades_pdf()
 
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(grades, f, ensure_ascii=False, indent=2)
@@ -245,9 +225,30 @@ class GradeFetcher(JWSystem):
                 self.driver.quit()
                 self.driver = None
 
-    def parse_grades(self):
+    def _print_grades_pdf(self):
+        """点击打印按钮下载成绩单PDF"""
+        try:
+            # 等待打印按钮加载
+            print_button = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable(
+                    (
+                        By.XPATH,
+                        "//button[contains(@class, 'el-button--primary')]//span[text()='打印']",
+                    )
+                )
+            )
+            print_button.click()
+
+            logger.info(f"成绩单PDF将下载到: {self.download_dir}")
+            time.sleep(self.wait_time)
+            return True
+        except Exception as e:
+            logger.error(f"打印成绩单失败: {str(e)}")
+            return False
+
+    def _parse_grades(self):
         """解析成绩数据"""
-        time.sleep(1)
+        time.sleep(self.wait_time)
         table = self.driver.find_element(By.CLASS_NAME, "table-border")
         rows = table.find_elements(By.TAG_NAME, "tr")
 

@@ -54,6 +54,12 @@ def main():
         type=Path,
         help="指定PDF下载目录 (默认: 当前目录)",
     )
+    parser.add_argument(
+        "--wait",
+        type=int,
+        default=2,
+        help="页面加载等待时间（秒），网络不好时可以适当增加 (默认: 2)",
+    )
 
     args = parser.parse_args()
 
@@ -64,8 +70,9 @@ def main():
     else:
         download_dir = os.getcwd()
 
-    fetcher = GradeFetcher(browser_type=args.browser)
+    fetcher = GradeFetcher(browser_type=args.browser, wait_time=args.wait)
     logger.info(f"使用 {args.browser} 浏览器获取成绩...")
+    logger.info(f"页面加载等待时间: {args.wait} 秒")
 
     # 初始化时传入下载目录
     fetcher.init_driver(headless=True, download_dir=download_dir)

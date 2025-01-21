@@ -37,6 +37,9 @@ pip install -r requirements.txt
 # 查看成绩（显示在终端）
 python query_grades.py
 
+# 增加等待时间（网络不好时使用）
+python query_grades.py --wait 5  # 等待5秒
+
 # 保存为 Excel 文件
 python query_grades.py -o grades.xlsx
 # 保存为 CSV 文件
@@ -66,5 +69,5 @@ python query_grades.py --browser chrome
 - 登录信息会保存在本地，后续使用无需重复登录
 
 ### 常见问题
-- 如果导航成功但是没有解析到成绩，大概率是因为网络问题没有加载完全，可以多试几次。
+- 如果导航成功但是没有解析到成绩，大概率是因为网络问题没有加载完全，可以尝试增加等待时间（`--wait` 参数）。
 - Mac 用户请使用 Chrome 浏览器，Edge 浏览器在 Mac 上可能无法正常使用。
