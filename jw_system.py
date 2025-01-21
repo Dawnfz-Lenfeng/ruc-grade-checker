@@ -235,7 +235,6 @@ class GradeFetcher(JWSystem):
     def _print_grades_pdf(self):
         """点击打印按钮下载成绩单PDF"""
         try:
-            # 等待打印按钮加载
             print_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable(
                     (

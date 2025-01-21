@@ -31,6 +31,24 @@ def save_grades(df: pd.DataFrame, output_path: Path) -> None:
         logger.error(f"不支持的文件格式: {suffix}")
 
 
+def calculate_average(df: pd.DataFrame):
+    """计算加权平均分（不包括P/F类成绩）"""
+    # 只选择最终成绩为数字的行
+    numeric_grades = df[df["最终成绩"].str.match(r"^\d+$")].copy()
+    if numeric_grades.empty:
+        return 0.0
+
+    numeric_grades["最终成绩"] = numeric_grades["最终成绩"].astype(float)
+    numeric_grades["学分"] = numeric_grades["学分"].astype(float)
+
+    # 计算加权平均分
+    total_credits = numeric_grades["学分"].sum()
+    weighted_sum = (numeric_grades["最终成绩"] * numeric_grades["学分"]).sum()
+    weighted_avg = weighted_sum / total_credits if total_credits > 0 else 0.0
+
+    return round(weighted_avg, 2)
+
+
 def main():
     parser = argparse.ArgumentParser(description="中国人民大学教务系统成绩查询工具")
 
@@ -82,6 +100,9 @@ def main():
         if not args.no_display:
             print("\n成绩查询结果：")
             print(grades)
+
+            weighted_avg= calculate_average(grades)
+            print(f"\n学分加权平均分：{weighted_avg}")
 
             if summary:
                 print("\n学期总结：")
