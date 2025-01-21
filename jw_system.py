@@ -2,14 +2,16 @@ import json
 import logging
 import os
 import time
-from typing import Optional
 
 import pandas as pd
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.edge.webdriver import WebDriver
+from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 from config import Config
@@ -41,24 +43,41 @@ class JWUrls:
 class JWSystem:
     """教务系统基础类"""
 
-    def __init__(self):
+    def __init__(self, browser_type="edge"):
         self.urls = JWUrls()
-        self.driver: Optional[WebDriver] = None
+        self.driver: WebDriver = None
         self.cookies_file = Config.COOKIES_FILE
+        self.browser_type = browser_type.lower()
+
+        if self.browser_type not in ["edge", "chrome"]:
+            logger.warning(f"不支持的浏览器类型: {browser_type}，将使用 edge")
+            self.browser_type = "edge"
 
     def init_driver(self, headless=True):
         """初始化浏览器驱动"""
         if self.driver:
             self.driver.quit()
 
-        options = webdriver.EdgeOptions()
-        if headless:
-            options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
+        if self.browser_type == "edge":
+            options = webdriver.EdgeOptions()
+            if headless:
+                options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
 
-        service = webdriver.EdgeService(EdgeChromiumDriverManager().install())
-        self.driver = webdriver.Edge(options=options, service=service)
+            service = EdgeService(EdgeChromiumDriverManager().install())
+            self.driver = webdriver.Edge(options=options, service=service)
+
+        elif self.browser_type == "chrome":
+            options = webdriver.ChromeOptions()
+            if headless:
+                options.add_argument("--headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+
+            service = ChromeService(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(options=options, service=service)
+
         self.driver.implicitly_wait(10)
 
     def login(self):

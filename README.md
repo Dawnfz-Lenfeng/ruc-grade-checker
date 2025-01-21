@@ -21,10 +21,6 @@
 **使用本程序即表示您已阅读并同意以上声明。**
 
 ## 安装教程
-### 环境要求
-- Python 3.8 或更高版本
-- Microsoft Edge 浏览器
-
 ### 安装依赖
 ```bash
 # 克隆项目
@@ -48,6 +44,10 @@ python query_grades.py -o grades.csv
 
 # 仅保存文件，不显示成绩
 python query_grades.py -o grades.xlsx --no-display
+
+# 选择浏览器（支持 edge 和 chrome，默认使用 chrome）
+python query_grades.py --browser edge  # 使用 Edge 浏览器
+python query_grades.py --browser chrome  # 使用 Chrome 浏览器
 ```
 
 注意，在首次运行时需要手动登录：
@@ -55,3 +55,7 @@ python query_grades.py -o grades.xlsx --no-display
 - 在浏览器中输入您的学号和密码，并点击记住登录状态
 - 完成登录后按回车继续
 - 登录信息会保存在本地，后续使用无需重复登录
+
+### 常见问题
+- 如果导航成功但是没有解析到成绩，大概率是因为网络问题没有加载完全，可以多试几次。
+- Mac 用户请使用 Chrome 浏览器，Edge 浏览器在 Mac 上可能无法正常使用。

@@ -12,6 +12,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+SUPPORTED_BROWSERS = ["edge", "chrome"]
+DEFAULT_BROWSER = "chrome"
+
+
 def save_grades(df: pd.DataFrame, output_path: Path) -> None:
     """保存成绩数据到文件"""
     suffix = output_path.suffix.lower()
@@ -33,11 +37,17 @@ def main():
         "-o", "--output", type=Path, help="输出文件路径 (支持 .xlsx 和 .csv 格式)"
     )
     parser.add_argument("--no-display", action="store_true", help="不显示成绩表格")
+    parser.add_argument(
+        "--browser",
+        choices=SUPPORTED_BROWSERS,
+        default=DEFAULT_BROWSER,
+        help=f"选择浏览器类型 (默认: {DEFAULT_BROWSER})",
+    )
 
     args = parser.parse_args()
 
-    fetcher = GradeFetcher()
-    logger.info("正在获取成绩...")
+    fetcher = GradeFetcher(browser_type=args.browser)
+    logger.info(f"使用 {args.browser} 浏览器获取成绩...")
     grades = fetcher.fetch_grades()
 
     if not grades.empty:
