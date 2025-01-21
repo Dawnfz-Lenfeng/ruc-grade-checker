@@ -53,32 +53,44 @@ class JWSystem:
             logger.warning(f"不支持的浏览器类型: {browser_type}，将使用 edge")
             self.browser_type = "edge"
 
-    def init_driver(self, headless=True):
+    def init_driver(self, headless=True, download_dir=None):
         """初始化浏览器驱动"""
         if self.driver:
             self.driver.quit()
 
-        if self.browser_type == "edge":
-            options = webdriver.EdgeOptions()
-            if headless:
-                options.add_argument("--headless")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
+        # 如果没有指定下载目录，使用当前目录
+        if download_dir is None:
+            download_dir = os.getcwd()
 
+        options = (
+            webdriver.EdgeOptions()
+            if self.browser_type == "edge"
+            else webdriver.ChromeOptions()
+        )
+        if headless:
+            options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        # 设置下载目录
+        options.add_experimental_option(
+            "prefs",
+            {
+                "download.default_directory": download_dir,
+                "download.prompt_for_download": False,
+                "download.directory_upgrade": True,
+                "safebrowsing.enabled": True,
+            },
+        )
+
+        if self.browser_type == "edge":
             service = EdgeService(EdgeChromiumDriverManager().install())
             self.driver = webdriver.Edge(options=options, service=service)
-
         elif self.browser_type == "chrome":
-            options = webdriver.ChromeOptions()
-            if headless:
-                options.add_argument("--headless")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
-
             service = ChromeService(ChromeDriverManager().install())
             self.driver = webdriver.Chrome(options=options, service=service)
 
         self.driver.implicitly_wait(10)
+        self.download_dir = download_dir  # 保存下载目录路径
 
     def login(self):
         """登录教务系统"""
@@ -178,7 +190,30 @@ class JWSystem:
 class GradeFetcher(JWSystem):
     """成绩查询类"""
 
-    def fetch_grades(self, output_file: str = Config.GRADES_FILE) -> pd.DataFrame:
+    def print_grades_pdf(self):
+        """点击打印按钮下载成绩单PDF"""
+        try:
+            # 等待打印按钮加载
+            print_button = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable(
+                    (
+                        By.XPATH,
+                        "//button[contains(@class, 'el-button--primary')]//span[text()='打印']",
+                    )
+                )
+            )
+            print_button.click()
+
+            logger.info(f"成绩单PDF将下载到: {self.download_dir}")
+            time.sleep(2)  # 等待下载开始
+            return True
+        except Exception as e:
+            logger.error(f"打印成绩单失败: {str(e)}")
+            return False
+
+    def fetch_grades(
+        self, output_file: str = Config.GRADES_FILE, print_pdf: bool = False
+    ) -> pd.DataFrame:
         """获取成绩信息"""
         try:
             if not self.driver:
@@ -191,6 +226,9 @@ class GradeFetcher(JWSystem):
                 raise Exception("无法访问成绩页面")
 
             grades = self.parse_grades()
+
+            if print_pdf:
+                self.print_grades_pdf()
 
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(grades, f, ensure_ascii=False, indent=2)

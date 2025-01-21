@@ -1,6 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
+import os
 
 import pandas as pd
 
@@ -43,12 +44,32 @@ def main():
         default=DEFAULT_BROWSER,
         help=f"选择浏览器类型 (默认: {DEFAULT_BROWSER})",
     )
+    parser.add_argument(
+        "--print",
+        action="store_true",
+        help="下载成绩单PDF文件",
+    )
+    parser.add_argument(
+        "--download-dir",
+        type=Path,
+        help="指定PDF下载目录 (默认: 当前目录)",
+    )
 
     args = parser.parse_args()
 
+    # 如果指定了下载目录，确保目录存在
+    if args.download_dir:
+        args.download_dir.mkdir(parents=True, exist_ok=True)
+        download_dir = str(args.download_dir.absolute())
+    else:
+        download_dir = os.getcwd()
+
     fetcher = GradeFetcher(browser_type=args.browser)
     logger.info(f"使用 {args.browser} 浏览器获取成绩...")
-    grades = fetcher.fetch_grades()
+
+    # 初始化时传入下载目录
+    fetcher.init_driver(headless=True, download_dir=download_dir)
+    grades = fetcher.fetch_grades(print_pdf=args.print)
 
     if not grades.empty:
         if not args.no_display:

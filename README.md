@@ -32,22 +32,31 @@ pip install -r requirements.txt
 ```
 
 ## 使用教程
+### 查询成绩
 ```bash
 # 查看成绩（显示在终端）
 python query_grades.py
 
 # 保存为 Excel 文件
 python query_grades.py -o grades.xlsx
-
 # 保存为 CSV 文件
 python query_grades.py -o grades.csv
-
 # 仅保存文件，不显示成绩
 python query_grades.py -o grades.xlsx --no-display
+```
+### 下载成绩单PDF
+```bash
+# 下载成绩单PDF
+python query_grades.py --print
+# 指定PDF下载目录
+python query_grades.py --print --download-dir ./pdf
+```
 
+### 浏览器选择
+```bash
 # 选择浏览器（支持 edge 和 chrome，默认使用 chrome）
-python query_grades.py --browser edge  # 使用 Edge 浏览器
-python query_grades.py --browser chrome  # 使用 Chrome 浏览器
+python query_grades.py --browser edge
+python query_grades.py --browser chrome
 ```
 
 注意，在首次运行时需要手动登录：
