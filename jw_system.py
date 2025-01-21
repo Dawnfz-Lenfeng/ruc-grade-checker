@@ -193,8 +193,12 @@ class GradeFetcher(JWSystem):
 
     def fetch_grades(
         self, output_file: str = Config.GRADES_FILE, print_pdf: bool = False
-    ) -> pd.DataFrame:
-        """获取成绩信息"""
+    ) -> tuple[pd.DataFrame, list]:
+        """获取成绩信息
+
+        Returns:
+            tuple: (成绩DataFrame, 总结信息列表)
+        """
         try:
             if not self.driver:
                 self.init_driver()
@@ -205,20 +209,23 @@ class GradeFetcher(JWSystem):
             if not self.navigate("grades"):
                 raise Exception("无法访问成绩页面")
 
-            grades = self._parse_grades()
+            result = self._parse_grades()
+            grades = result["grades"]
+            summary = result["summary"]
+
+            # 保存完整数据到JSON
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(result, f, ensure_ascii=False, indent=2)
+            logger.info(f"成绩数据已保存到 {output_file}")
 
             if print_pdf:
                 self._print_grades_pdf()
 
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(grades, f, ensure_ascii=False, indent=2)
-            logger.info(f"成绩数据已保存到 {output_file}")
-
-            return pd.DataFrame(grades)
+            return pd.DataFrame(grades), summary
 
         except Exception as e:
             logger.error(f"获取成绩失败: {str(e)}")
-            return pd.DataFrame()
+            return pd.DataFrame(), []
 
         finally:
             if self.driver:
@@ -252,18 +259,25 @@ class GradeFetcher(JWSystem):
         table = self.driver.find_element(By.CLASS_NAME, "table-border")
         rows = table.find_elements(By.TAG_NAME, "tr")
 
+        # 提取表头和成绩数据
         headers = [
             header.text.strip() for header in rows[0].find_elements(By.TAG_NAME, "th")
         ]
 
         grades = []
+        summary_info = []
+
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, "td")
-            if len(cells) == len(headers):
+            if len(cells) == len(headers):  # 正常的成绩行
                 grade_dict = {
                     header: cell.text.strip() for header, cell in zip(headers, cells)
                 }
                 grades.append(grade_dict)
+            elif len(cells) == 1:  # 学期总结信息
+                summary = cells[0].text.strip()
+                if summary:
+                    summary_info.append(summary)
 
         logger.info(f"成功解析 {len(grades)} 条成绩记录")
-        return grades
+        return {"grades": grades, "summary": summary_info}

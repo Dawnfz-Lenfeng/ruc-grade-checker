@@ -1,7 +1,7 @@
 import argparse
 import logging
-from pathlib import Path
 import os
+from pathlib import Path
 
 import pandas as pd
 
@@ -76,12 +76,17 @@ def main():
 
     # 初始化时传入下载目录
     fetcher.init_driver(headless=True, download_dir=download_dir)
-    grades = fetcher.fetch_grades(print_pdf=args.print)
+    grades, summary = fetcher.fetch_grades(print_pdf=args.print)
 
     if not grades.empty:
         if not args.no_display:
             print("\n成绩查询结果：")
             print(grades)
+
+            if summary:
+                print("\n学期总结：")
+                for info in summary:
+                    print(info)
 
         if args.output:
             save_grades(grades, args.output)
