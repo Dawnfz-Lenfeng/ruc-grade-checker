@@ -68,8 +68,8 @@ def main(
 
     # 处理重置请求
     if reset:
-        if os.path.exists(Config.COOKIES_FILE):
-            os.remove(Config.COOKIES_FILE)
+        if Config.COOKIES_FILE.exists():
+            Config.COOKIES_FILE.unlink()
             console.print("[green]已重置登录状态[/green]")
         else:
             console.print("[yellow]没有找到保存的登录信息[/yellow]")
