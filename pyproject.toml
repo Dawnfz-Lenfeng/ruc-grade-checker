@@ -17,6 +17,7 @@ dependencies = [
     "typer>=0.9.0",
     "rich>=13.0.0",
 ]
+license = { text = "MIT" }
 
 [project.scripts]
 grade-checker = "src.cli:app"
