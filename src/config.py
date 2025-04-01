@@ -8,3 +8,6 @@ class Config:
     # Json文件路径
     COOKIES_FILE = APP_DIR / "cookies.json"
     GRADES_FILE = APP_DIR / "grades.json"
+
+
+config = Config()

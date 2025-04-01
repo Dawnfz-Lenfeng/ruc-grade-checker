@@ -33,43 +33,47 @@ pip install .
 
 ## 使用说明
 
-### 命令行参数
+### 通用选项
+所有命令都支持以下选项：
 
-| 参数 | 简写 | 类型 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| `--output` | `-o` | 文件路径 | - | 输出文件路径（支持.xlsx和.csv格式） |
-| `--no-display` | - | 布尔值 | False | 不在终端显示成绩表格 |
-| `--browser` | - | 字符串 | chrome | 选择浏览器类型（支持chrome/edge） |
-| `--print` | - | 布尔值 | False | 下载成绩单PDF文件 |
-| `--download-dir` | - | 文件夹路径 | 当前目录 | 指定PDF下载目录 |
-| `--wait` | - | 整数 | 2 | 页面加载等待时间（秒） |
-| `--reset` | - | 布尔值 | False | 重置登录状态，清除保存的登录信息 |
-| `--help` | - | - | - | 显示帮助信息 |
+| 选项 | 简写 | 默认值 | 说明 |
+|------|------|--------|------|
+| `--browser` | `-b` | chrome | 浏览器类型（支持chrome/edge） |
+| `--wait` | `-w` | 2 | 页面加载等待时间（秒） |
 
-### 使用示例
+### 命令详解
 
+#### 显示成绩
 ```bash
-# 基本使用（显示在终端）
-grade-checker
+# 基本使用
+grade-checker show
 
-# 保存为Excel文件
-grade-checker -o grades.xlsx
+# 不显示成绩表格
+grade-checker show --no-display
+```
 
-# 保存为CSV文件
-grade-checker -o grades.csv
+#### 保存成绩
+```bash
+# 保存为Excel
+grade-checker save grades.xlsx
 
-# 仅保存文件，不显示成绩
-grade-checker -o grades.xlsx --no-display
+# 保存为CSV
+grade-checker save grades.csv
+```
 
-# 下载成绩单PDF
-grade-checker --print
-grade-checker --print --download-dir ./pdf
+#### 导出PDF
+```bash
+# 默认保存到当前目录
+grade-checker print
 
-# 使用Edge浏览器
-grade-checker --browser edge
+# 指定保存目录
+grade-checker print --dir ./pdf
+```
 
-# 增加等待时间（网络不好时使用）
-grade-checker --wait 5
+#### 重置登录
+```bash
+# 清除保存的登录信息
+grade-checker reset
 ```
 
 ### 首次使用说明
@@ -77,9 +81,9 @@ grade-checker --wait 5
 首次运行时需要手动登录：
 - 程序会自动打开浏览器
 - 在浏览器中输入您的学号和密码，并点击记住登录状态
-- 完成登录后按回车继续
 - 登录信息会保存在本地，后续使用无需重复登录
 
 ### 常见问题
+
 - 如果导航成功但是没有解析到成绩，大概率是因为网络问题没有加载完全，可以尝试增加等待时间（`--wait` 参数）。
 - Mac 用户请使用 Chrome 浏览器，Edge 浏览器在 Mac 上可能无法正常使用。

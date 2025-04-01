@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
-from .config import Config
+from .config import config
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class JWSystem:
     def __init__(self, browser_type="edge", wait_time=2):
         self.urls = JWUrls()
         self.driver: WebDriver = None
-        self.cookies_file = Config.COOKIES_FILE
+        self.cookies_file = config.COOKIES_FILE
         self.browser_type = browser_type.lower()
         self.wait_time = wait_time
 
@@ -189,7 +189,7 @@ class GradeFetcher(JWSystem):
     """成绩查询类"""
 
     def fetch_grades(
-        self, output_file: str = Config.GRADES_FILE, print_pdf: bool = False
+        self, output_file: str = config.GRADES_FILE, print_pdf: bool = False
     ) -> tuple[pd.DataFrame, list]:
         """获取成绩信息
 
