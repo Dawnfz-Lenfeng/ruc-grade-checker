@@ -5,6 +5,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from .config import Config
 from .jw_system import GradeFetcher
 from .utils import calculate_average, save_grades
 
@@ -54,11 +55,25 @@ def main(
         "--wait",
         help="页面加载等待时间（秒），网络不好时可以适当增加",
     ),
+    reset: bool = typer.Option(
+        False,
+        "--reset",
+        help="重置登录状态，清除保存的登录信息",
+    ),
 ):
     """查询成绩并可选保存为文件"""
     if browser not in SUPPORTED_BROWSERS:
         console.print(f"[red]错误：不支持的浏览器类型 {browser}[/red]")
         raise typer.Exit(1)
+
+    # 处理重置请求
+    if reset:
+        if os.path.exists(Config.COOKIES_FILE):
+            os.remove(Config.COOKIES_FILE)
+            console.print("[green]已重置登录状态[/green]")
+        else:
+            console.print("[yellow]没有找到保存的登录信息[/yellow]")
+        return
 
     # 处理下载目录
     if download_dir:

@@ -103,13 +103,12 @@ class JWSystem:
         self.init_driver(headless=False)  # 手动登录时显示浏览器窗口
         self.driver.get(self.urls.base)
 
-        logger.info("请在浏览器窗口中手动完成登录...")
-        input("完成登录后按回车继续...")
+        logger.info("请在浏览器窗口中完成登录...")
+        while not self._check_login_success():
+            time.sleep(1)
 
-        if self._check_login_success():
-            return self.save_cookies()
-
-        return False
+        logger.info("检测到登录成功，正在保存登录状态...")
+        return self.save_cookies()
 
     def load_cookies(self) -> bool:
         """从文件加载cookies"""
@@ -161,13 +160,11 @@ class JWSystem:
     def _check_login_success(self):
         """检查是否登录成功"""
         try:
-            WebDriverWait(self.driver, 5).until(
+            WebDriverWait(self.driver, 1).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "user-logo"))
             )
-            logger.info("登录成功")
             return True
         except Exception:
-            logger.error("登录失败")
             return False
 
     def _check_navigate_success(self):
